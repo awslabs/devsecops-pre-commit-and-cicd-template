@@ -1,0 +1,170 @@
+---
+name: Security and Compliance
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.13"
+  FERRET_SCAN_CONFIDENCE: "medium,high"
+  FERRET_SCAN_CHECKS: "EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,SECRETS,SOCIAL_MEDIA"
+  FERRET_SCAN_CONFIG: ".devsecops/ferret-scan.yaml"
+
+# Set minimal permissions at workflow level, override in jobs as needed
+permissions:
+  contents: read
+
+jobs:
+  # ASH Security Scanning
+  ash-security-scan:
+    name: ASH Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install UV (Python package manager)
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Run ASH Security Scan
+        run: |
+          echo "Running ASH (Automated Security Helper) security analysis..."
+          uvx git+https://github.com/awslabs/automated-security-helper.git@v3.1.5 --mode precommit
+        continue-on-error: true
+
+      - name: Upload ASH Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ash-security-results
+          path: |
+            .ash/
+            **/*-report.json
+          retention-days: 7
+
+  # Ferret Scan for Sensitive Data Detection
+  ferret-scan:
+    name: Ferret Scan (Sensitive Data)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install ferret-scan
+
+      - name: Run Ferret Scan
+        run: |
+          echo "Running Ferret Scan security analysis..."
+
+          if [ -f "$FERRET_SCAN_CONFIG" ]; then
+            echo "✓ Using config file: $FERRET_SCAN_CONFIG"
+            CONFIG_ARG="--config $FERRET_SCAN_CONFIG"
+          else
+            echo "⚠ No config file found at $FERRET_SCAN_CONFIG, using defaults"
+            CONFIG_ARG=""
+          fi
+
+          ferret-scan \
+            --recursive \
+            --format sarif \
+            --output ferret-scan-results.sarif \
+            --confidence $FERRET_SCAN_CONFIDENCE \
+            --checks $FERRET_SCAN_CHECKS \
+            --no-color \
+            --quiet \
+            $CONFIG_ARG \
+            --file * || true
+
+          if [ -f "ferret-scan-results.sarif" ]; then
+            echo "✓ Ferret Scan completed successfully"
+            # Count vulnerabilities if jq is available
+            if command -v jq &> /dev/null; then
+              VULN_COUNT=$(jq '.runs[0].results | length' ferret-scan-results.sarif 2>/dev/null || echo "0")
+              echo "Found $VULN_COUNT potential sensitive data findings"
+            fi
+          else
+            echo "⚠ Warning: Ferret Scan report not generated"
+          fi
+        continue-on-error: true
+
+      - name: Upload Ferret Scan Results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ferret-scan-results.sarif
+          category: ferret-scan
+        continue-on-error: true
+
+      - name: Upload Ferret Scan Results as Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ferret-scan-results
+          path: ferret-scan-results.sarif
+          retention-days: 7
+
+  # License Compliance Check
+  license-compliance:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install licensecheck
+        run: |
+          pip install licensecheck
+
+      - name: Run License Compliance Check
+        run: |
+          echo "Checking license compliance..."
+          licensecheck --format=ansi --zero
+          echo "✓ All licenses are compliant"
+
+      - name: Upload License Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: license-compliance-report
+          path: licenses.json
+          retention-days: 7
+        continue-on-error: true
