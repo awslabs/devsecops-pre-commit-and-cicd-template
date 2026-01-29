@@ -213,16 +213,24 @@ This configuration includes multiple layers of security scanning, code quality c
 - `end-of-file-fixer`: Ensures files end with a newline
 - `name-tests-test`: Verifies test files follow naming conventions
 - `no-commit-to-branch`: Prevents direct commits to protected branches (main and master)
+- `requirements-txt-fixer`: Sorts and formats Python requirements.txt files alphabetically
+- `trailing-whitespace`: Removes trailing whitespace from files
 
-**Codespell** (Security + Linting configuration only)
+**Codespell**
 
 - Checks for common misspellings in text files
 - Helps maintain professional documentation and code comments
 - Runs with verbose output to show detailed spell-checking results
-- `requirements-txt-fixer`: Sorts and formats Python requirements.txt files alphabetically
-- `trailing-whitespace`: Removes trailing whitespace from files
 
 ### Language-Specific: Python
+
+**Ruff (Python Linter and Formatter)**
+
+- Fast Python linter and formatter written in Rust
+- Replaces Flake8, isort, and other Python linting tools
+- Two hooks: `ruff` (linting with auto-fix) and `ruff-format` (code formatting)
+- Extremely fast - 10-100x faster than traditional Python linters
+- Only runs on `.py` files
 
 **Black (Python Formatter)**
 
@@ -230,13 +238,6 @@ This configuration includes multiple layers of security scanning, code quality c
 - Automatically reformats Python code to be PEP 8 compliant
 - Produces consistent, deterministic formatting across the entire project
 - Only runs on `.py` files
-
-**Ruff (Python Linter)**
-
-- Fast Python linter written in Rust
-- Replaces Flake8, isort, and other Python linting tools
-- Automatically fixes issues where possible
-- Extremely fast - 10-100x faster than traditional Python linters
 
 **Python Safety**
 
@@ -293,12 +294,26 @@ This configuration includes multiple layers of security scanning, code quality c
 - Sensitive data detection tool that scans files for potential PII and sensitive information
 - Detects credit card numbers, passport numbers, SSNs, email addresses, phone numbers, and more
 - Uses pattern matching, entropy analysis, and context-aware validation
-- Scans multiple file types: Go, JavaScript, Python, Java, YAML, JSON, XML, SQL, Markdown, and shell scripts
+- Scans multiple file types: Go, Java, JSON, Markdown, Python, Shell scripts, SQL, Text, XML, and YAML
 - Configured to run with medium and high confidence levels for comprehensive detection
 - Limited to specific validators: EMAIL, INTELLECTUAL_PROPERTY, IP_ADDRESS, SECRETS, SOCIAL_MEDIA
-- Alternative: Place config in your `~/.ferret-scan` folder for global use
+- Uses configuration file at `.devsecops/ferret-scan.yaml` with customizable patterns
+- Runs in pre-commit mode for fast, targeted scanning of changed files
 
 **Note:** ASH includes detect-secrets, Bandit, and Checkov, so these tools have been removed from the pre-commit configuration to avoid duplication. ASH provides a unified scanning experience with all these tools integrated.
+
+### Infrastructure as Code
+
+**Terraform Tools**
+
+- `terraform_fmt`: Formats Terraform files according to standard conventions
+- `terraform_tflint`: Advanced Terraform linting for best practices and potential errors
+  - Configured with `verbose: true` for detailed output
+  - Uses `--format=compact` for cleaner output
+  - Uses `--force` flag to show warnings but not block commits
+- Only runs on `.tf` files
+
+**Note:** `terraform_validate` is intentionally excluded from pre-commit hooks because it requires `terraform init` and AWS credentials, which may not be available in the pre-commit environment. These validations are better suited for CI/CD pipelines.
 
 ### Infrastructure Security
 
@@ -308,21 +323,6 @@ This configuration includes multiple layers of security scanning, code quality c
 - Checks against AWS CloudFormation resource provider schemas
 - Validates resource properties, best practices, and proper values
 - Supports AWS SAM (Serverless Application Model) transformations
-
-**Terraform Tools**
-
-- `terraform_fmt`: Formats Terraform files according to standard conventions (Security + Linting only)
-- `terraform_tflint`: Advanced Terraform linting for best practices and potential errors
-  - Configured with `verbose: true` for better visibility of results
-  - Uses `--format=compact` for cleaner output
-  - Uses `--force` flag to show warnings but not block commits
-- Only runs on `.tf` files
-
-**Note:** `terraform_validate` and `terraform_checkov` are intentionally excluded from pre-commit hooks due to:
-
-- `terraform_validate` requires `terraform init` and AWS credentials, causing failures in pre-commit environment
-- `terraform_checkov` requires separate checkov installation and can have PATH/environment issues
-- Both tools are better suited for CI/CD pipelines where proper environment setup is available
 
 **Note:** Checkov is now included in ASH scanning and has been removed from the standalone pre-commit hooks to avoid duplication.
 
