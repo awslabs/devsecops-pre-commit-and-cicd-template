@@ -9,7 +9,7 @@
 set -e
 
 VERSION="1.0.0"
-REPO_URL="${DEVSECOPS_REPO_URL:-<YOUR_REPO_URL>}"
+REPO_URL="https://github.com/awslabs/devsecops-pre-commit-and-cicd-template.git"
 TEMP_DIR="$(mktemp -d)/DevSecOps"
 
 # Colors for output

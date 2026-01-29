@@ -10,7 +10,7 @@
 variables:
   # Python version (latest stable)
   PYTHON_VERSION: "3.13"
-  # Ferret Scan configuration
+  # Ferret Scan configuration (config file is included in .devsecops/)
   FERRET_SCAN_CONFIDENCE: "medium,high"
   FERRET_SCAN_CHECKS: "EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,SECRETS,SOCIAL_MEDIA"
   FERRET_SCAN_CONFIG: ".devsecops/ferret-scan.yaml"

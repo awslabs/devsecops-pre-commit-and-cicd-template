@@ -21,14 +21,14 @@ Use the standalone setup script to automatically configure DevSecOps in your rep
 **Quick setup (one command):**
 
 ```bash
-TEMP_SETUP="$(mktemp -d)" && git clone <YOUR_REPO_URL> "$TEMP_SETUP/repo" && bash "$TEMP_SETUP/repo/setup.sh" && rm -rf "$TEMP_SETUP"
+TEMP_SETUP="$(mktemp -d)" && git clone https://github.com/awslabs/devsecops-pre-commit-and-cicd-template.git "$TEMP_SETUP/repo" && bash "$TEMP_SETUP/repo/setup.sh" && rm -rf "$TEMP_SETUP"
 ```
 
 **Or review before running:**
 
 ```bash
 TEMP_SETUP="$(mktemp -d)"
-git clone <YOUR_REPO_URL> "$TEMP_SETUP/repo"
+git clone https://github.com/awslabs/devsecops-pre-commit-and-cicd-template.git "$TEMP_SETUP/repo"
 cat "$TEMP_SETUP/repo/setup.sh"
 bash "$TEMP_SETUP/repo/setup.sh"
 rm -rf "$TEMP_SETUP"
@@ -664,7 +664,7 @@ The standalone `setup.sh` script provides:
 **Quick run (one-liner):**
 
 ```bash
-TEMP_SETUP="$(mktemp -d)" && git clone <YOUR_REPO_URL> "$TEMP_SETUP/repo" && bash "$TEMP_SETUP/repo/setup.sh" && rm -rf "$TEMP_SETUP"
+TEMP_SETUP="$(mktemp -d)" && git clone https://github.com/awslabs/devsecops-pre-commit-and-cicd-template.git "$TEMP_SETUP/repo" && bash "$TEMP_SETUP/repo/setup.sh" && rm -rf "$TEMP_SETUP"
 ```
 
 **Step-by-step (review before running):**
@@ -678,7 +678,7 @@ TEMP_SETUP="$(mktemp -d)"
 Clone the repository:
 
 ```bash
-git clone <YOUR_REPO_URL> "$TEMP_SETUP/repo"
+git clone https://github.com/awslabs/devsecops-pre-commit-and-cicd-template.git "$TEMP_SETUP/repo"
 ```
 
 Review the script:
