@@ -21,6 +21,7 @@ env:
 # Set minimal permissions at workflow level, override in jobs as needed
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   # ASH Security Scanning
