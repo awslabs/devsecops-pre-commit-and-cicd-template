@@ -153,6 +153,19 @@ if ! rsync -a "$TEMP_DIR/.devsecops/" .devsecops/ 2>/dev/null; then
 fi
 echo -e "${GREEN}✓ .devsecops/ directory copied${NC}"
 
+# Copy .github directory
+echo "Copying GitHub Actions workflows..."
+if [ -d "$TEMP_DIR/.github" ]; then
+    if ! rsync -a "$TEMP_DIR/.github/" .github/ 2>/dev/null; then
+        echo -e "${RED}✗ Failed to copy .github directory${NC}"
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+    echo -e "${GREEN}✓ .github/ directory copied${NC}"
+else
+    echo -e "${YELLOW}⚠ .github directory not found in template (skipping)${NC}"
+fi
+
 # Copy licensecheck.toml (always safe to copy)
 echo "Copying licensecheck.toml..."
 if ! cp "$TEMP_DIR/licensecheck.toml" . 2>/dev/null; then
@@ -331,6 +344,8 @@ echo "Files added/updated in your repository:"
 echo "  • .devsecops/ (configuration directory)"
 echo "    - eslintrc.json"
 echo "    - eslintignore"
+echo "  • .github/ (GitHub Actions workflows)"
+echo "    - workflows/security-compliance.yml"
 echo "  • .pre-commit-config.yaml (${CONFIG_TYPE} configuration)"
 echo "  • .gitlab-ci.yml"
 echo "  • licensecheck.toml"
