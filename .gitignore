@@ -1,0 +1,17 @@
+# DevSecOps - Generated files
+.ash/
+.eslintcache
+sbom-*.json
+licenses.json
+ferret-sast-report.json
+
+# DevSecOps - Root config files (they live in .devsecops/ now)
+# Uncomment these if you want to test configs in root during development
+# /.pre-commit-config.yaml
+# /.gitlab-ci.yml
+
+# DevSecOps - Configuration files (KEEP THESE TRACKED)
+# These files should be committed to your repository:
+# - .pre-commit-config.yaml (pre-commit hooks configuration)
+# - .gitlab-ci.yml (CI/CD pipeline configuration)
+# - licensecheck.toml (license compliance policy)

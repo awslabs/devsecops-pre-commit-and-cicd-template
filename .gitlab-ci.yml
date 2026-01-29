@@ -1,0 +1,110 @@
+---
+# GitLab CI/CD Pipeline with Ferret Scan and ASH Security Scanning
+# Scans for sensitive data, PII, and security vulnerabilities with GitLab Security Dashboard integration
+
+# Include ASH (Automated Security Helper) component
+# Replace with your own ASH component URL or remove if not using GitLab components
+# include:
+#   - component: <YOUR_ASH_COMPONENT_URL>
+
+variables:
+  # Python version (latest stable)
+  PYTHON_VERSION: "3.13"
+  # Ferret Scan configuration
+  FERRET_SCAN_CONFIDENCE: "medium,high"
+  FERRET_SCAN_CHECKS: "EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,SECRETS,SOCIAL_MEDIA"
+  FERRET_SCAN_CONFIG: ".devsecops/ferret-scan.yaml"
+
+stages:
+  - security
+  - compliance
+
+# Cache pip packages for faster builds
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .cache/pip
+  policy: pull-push
+  when: on_success
+
+# Override ASH job to run in security stage
+ash-sast:
+  stage: security
+
+# Ferret Scan SAST integration for GitLab Security Dashboard
+ferret-scan:
+  stage: security
+  image: public.ecr.aws/docker/library/python:${PYTHON_VERSION}-slim
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-ferret
+    paths:
+      - .cache/pip
+    policy: pull-push
+    when: on_success
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq jq > /dev/null 2>&1
+    - pip install --cache-dir .cache/pip ferret-scan
+  script:
+    - echo "Running Ferret Scan security analysis..."
+    - |
+      if [ -f "$FERRET_SCAN_CONFIG" ]; then
+        echo "✓ Using config file: $FERRET_SCAN_CONFIG"
+        CONFIG_ARG="--config $FERRET_SCAN_CONFIG"
+      else
+        echo "⚠ No config file found at $FERRET_SCAN_CONFIG, using defaults"
+        CONFIG_ARG=""
+      fi
+    - |
+      ferret-scan \
+        --recursive \
+        --format gitlab-sast \
+        --output ferret-sast-report.json \
+        --confidence $FERRET_SCAN_CONFIDENCE \
+        --checks $FERRET_SCAN_CHECKS \
+        --no-color \
+        --quiet \
+        $CONFIG_ARG \
+        --file * || true
+    - |
+      if [ -f "ferret-sast-report.json" ]; then
+        echo "✓ Ferret Scan completed successfully"
+        VULN_COUNT=$(jq '.vulnerabilities | length' ferret-sast-report.json 2>/dev/null || echo "0")
+        echo "Found $VULN_COUNT potential sensitive data findings"
+      else
+        echo "⚠ Warning: Ferret SAST report not generated"
+      fi
+  after_script:
+    # Clean up to reduce storage usage
+    - pip cache purge || true
+    - rm -rf .cache/pip/http || true
+  artifacts:
+    reports:
+      sast: ferret-sast-report.json
+    paths:
+      - ferret-sast-report.json
+    expire_in: 1 week
+    when: always
+  allow_failure: true
+
+# License Compliance Checking
+license-compliance:
+  stage: compliance
+  image: public.ecr.aws/docker/library/python:${PYTHON_VERSION}-slim
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-license
+    paths:
+      - .cache/pip
+    policy: pull-push
+    when: on_success
+  before_script:
+    - pip install --cache-dir .cache/pip licensecheck
+  script:
+    - echo "Checking license compliance..."
+    # Run licensecheck
+    - licensecheck --format=ansi --zero
+    - echo "✓ All licenses are compliant"
+  after_script:
+    # Clean up to reduce storage usage
+    - pip cache purge || true
+    - rm -rf .cache/pip/http || true
+  allow_failure: false
