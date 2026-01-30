@@ -3,9 +3,8 @@
 # Scans for sensitive data, PII, and security vulnerabilities with GitLab Security Dashboard integration
 
 # Include ASH (Automated Security Helper) component
-# Replace with your own ASH component URL or remove if not using GitLab components
-# include:
-#   - component: <YOUR_ASH_COMPONENT_URL>
+include:
+  - component: code.aws.dev/proserve/automated-security-helper/automated-security-helper/ash@~latest
 
 variables:
   # Python version (latest stable)
@@ -26,10 +25,6 @@ cache:
     - .cache/pip
   policy: pull-push
   when: on_success
-
-# Override ASH job to run in security stage
-ash-sast:
-  stage: security
 
 # Ferret Scan SAST integration for GitLab Security Dashboard
 ferret-scan:
