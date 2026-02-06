@@ -58,6 +58,178 @@ fi
 
 echo ""
 
+# ============================================================================
+# PROACTIVE PROJECT TYPE DETECTION
+# ============================================================================
+echo -e "${BLUE}Detecting Project Type...${NC}"
+echo ""
+
+DETECTED_TERRAFORM=false
+DETECTED_NODE=false
+DETECTED_GO=false
+DETECTED_JAVA=false
+
+# Detect Terraform
+if [ -n "$(find . -maxdepth 3 -name '*.tf' -print -quit 2>/dev/null)" ]; then
+    DETECTED_TERRAFORM=true
+    echo -e "${BLUE}✓ Detected Terraform files (.tf)${NC}"
+fi
+
+# Detect Node.js/JavaScript/TypeScript
+if [ -f "package.json" ] || [ -n "$(find . -maxdepth 3 \( -name '*.js' -o -name '*.ts' -o -name '*.jsx' -o -name '*.tsx' \) -print -quit 2>/dev/null)" ]; then
+    DETECTED_NODE=true
+    echo -e "${BLUE}✓ Detected Node.js/JavaScript/TypeScript project${NC}"
+fi
+
+# Detect Go
+if [ -f "go.mod" ] || [ -n "$(find . -maxdepth 3 -name '*.go' -print -quit 2>/dev/null)" ]; then
+    DETECTED_GO=true
+    echo -e "${BLUE}✓ Detected Go project${NC}"
+fi
+
+# Detect Java
+if [ -f "pom.xml" ] || [ -f "build.gradle" ] || [ -n "$(find . -maxdepth 3 -name '*.java' -print -quit 2>/dev/null)" ]; then
+    DETECTED_JAVA=true
+    echo -e "${BLUE}✓ Detected Java project${NC}"
+fi
+
+if [ "$DETECTED_TERRAFORM" = false ] && [ "$DETECTED_NODE" = false ] && [ "$DETECTED_GO" = false ] && [ "$DETECTED_JAVA" = false ]; then
+    echo -e "${YELLOW}ℹ No specific project type detected (Python-only or other)${NC}"
+fi
+
+echo ""
+
+# ============================================================================
+# DEPENDENCY VALIDATION
+# ============================================================================
+echo -e "${BLUE}Validating Dependencies...${NC}"
+echo ""
+
+MISSING_DEPS=0
+MISSING_TOOLS=()
+MISSING_INSTRUCTIONS=()
+
+# Terraform dependencies
+if [ "$DETECTED_TERRAFORM" = true ]; then
+    echo "Checking Terraform dependencies..."
+
+    if ! command -v terraform >/dev/null 2>&1; then
+        echo -e "${RED}✗ terraform CLI is not installed${NC}"
+        MISSING_TOOLS+=("terraform")
+        MISSING_INSTRUCTIONS+=("Terraform CLI|macOS: brew install terraform|Linux: Download from https://terraform.io/downloads|Windows: Download from https://terraform.io/downloads")
+        MISSING_DEPS=1
+    else
+        echo -e "${GREEN}✓ terraform CLI found${NC}"
+    fi
+
+    if ! command -v tflint >/dev/null 2>&1; then
+        echo -e "${RED}✗ tflint is not installed${NC}"
+        MISSING_TOOLS+=("tflint")
+        MISSING_INSTRUCTIONS+=("tflint|macOS: brew install tflint|Linux/Windows: Download from https://github.com/terraform-linters/tflint/releases")
+        MISSING_DEPS=1
+    else
+        echo -e "${GREEN}✓ tflint found${NC}"
+    fi
+fi
+
+# Node.js dependencies
+if [ "$DETECTED_NODE" = true ]; then
+    echo "Checking Node.js dependencies..."
+
+    if ! command -v node >/dev/null 2>&1; then
+        echo -e "${RED}✗ Node.js is not installed${NC}"
+        MISSING_TOOLS+=("node")
+        MISSING_INSTRUCTIONS+=("Node.js|macOS: brew install node|Linux: Use your package manager (apt/yum) or download from https://nodejs.org|Windows: Download from https://nodejs.org")
+        MISSING_DEPS=1
+    else
+        NODE_VERSION=$(node --version)
+        echo -e "${GREEN}✓ Node.js found ($NODE_VERSION)${NC}"
+    fi
+
+    if ! command -v npm >/dev/null 2>&1; then
+        echo -e "${RED}✗ npm is not installed${NC}"
+        MISSING_TOOLS+=("npm")
+        MISSING_INSTRUCTIONS+=("npm|Typically installed with Node.js|If missing, reinstall Node.js from https://nodejs.org")
+        MISSING_DEPS=1
+    else
+        NPM_VERSION=$(npm --version)
+        echo -e "${GREEN}✓ npm found (v$NPM_VERSION)${NC}"
+    fi
+
+    # Check if package.json exists and node_modules is missing
+    if [ -f "package.json" ] && [ ! -d "node_modules" ]; then
+        echo -e "${YELLOW}⚠ package.json found but node_modules is missing${NC}"
+        echo -e "${YELLOW}  You need to run 'npm install' before committing${NC}"
+        MISSING_TOOLS+=("node_modules")
+        MISSING_INSTRUCTIONS+=("Node.js dependencies|Run: npm install|Or: yarn install / pnpm install (if using those package managers)|This must be done before pre-commit hooks will work")
+        MISSING_DEPS=1
+    elif [ -f "package.json" ] && [ -d "node_modules" ]; then
+        echo -e "${GREEN}✓ node_modules found${NC}"
+    fi
+fi
+
+# Go dependencies
+if [ "$DETECTED_GO" = true ]; then
+    echo "Checking Go dependencies..."
+
+    if ! command -v go >/dev/null 2>&1; then
+        echo -e "${RED}✗ Go is not installed${NC}"
+        MISSING_TOOLS+=("go")
+        MISSING_INSTRUCTIONS+=("Go|macOS: brew install go|Linux: Download from https://go.dev/dl/|Windows: Download from https://go.dev/dl/")
+        MISSING_DEPS=1
+    else
+        GO_VERSION=$(go version | awk '{print $3}')
+        echo -e "${GREEN}✓ Go found ($GO_VERSION)${NC}"
+    fi
+fi
+
+# Java dependencies
+if [ "$DETECTED_JAVA" = true ]; then
+    echo "Checking Java dependencies..."
+
+    if ! command -v java >/dev/null 2>&1; then
+        echo -e "${RED}✗ Java is not installed${NC}"
+        MISSING_TOOLS+=("java")
+        MISSING_INSTRUCTIONS+=("Java JDK|macOS: brew install openjdk|Linux: apt-get install default-jdk or yum install java-devel|Windows: Download from https://adoptium.net/")
+        MISSING_DEPS=1
+    else
+        JAVA_VERSION=$(java -version 2>&1 | head -n 1)
+        echo -e "${GREEN}✓ Java found ($JAVA_VERSION)${NC}"
+    fi
+fi
+
+# If any dependencies are missing, show detailed instructions and exit
+if [ $MISSING_DEPS -eq 1 ]; then
+    echo ""
+    echo -e "${RED}════════════════════════════════════════════════════════════${NC}"
+    echo -e "${RED}✗ MISSING REQUIRED DEPENDENCIES${NC}"
+    echo -e "${RED}════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "The following tools/dependencies are required but not found:"
+    echo ""
+
+    for instruction in "${MISSING_INSTRUCTIONS[@]}"; do
+        IFS='|' read -r tool_name mac_install linux_install windows_install <<< "$instruction"
+        echo -e "${YELLOW}▸ ${tool_name}${NC}"
+        echo "  $mac_install"
+        if [ -n "$linux_install" ]; then
+            echo "  $linux_install"
+        fi
+        if [ -n "$windows_install" ]; then
+            echo "  $windows_install"
+        fi
+        echo ""
+    done
+
+    echo -e "${BLUE}After installing the missing dependencies, re-run this script:${NC}"
+    echo -e "  ${YELLOW}./setup.sh${NC}"
+    echo ""
+    exit 1
+fi
+
+echo -e "${GREEN}✓ All required dependencies are installed${NC}"
+echo ""
+
 # Check if user is using Terraform
 echo -e "${BLUE}Terraform Usage Check${NC}"
 read -p "Are you using Terraform in this project? (y/n) " -n 1 -r
@@ -66,62 +238,6 @@ echo ""
 USE_TERRAFORM=false
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     USE_TERRAFORM=true
-    echo "Checking Terraform dependencies..."
-
-    TERRAFORM_MISSING=0
-    MISSING_TERRAFORM_TOOLS=()
-
-    # Check for terraform CLI (required for terraform_fmt)
-    if ! command -v terraform >/dev/null 2>&1; then
-        echo -e "${RED}✗ terraform CLI is not installed${NC}"
-        MISSING_TERRAFORM_TOOLS+=("terraform CLI")
-        TERRAFORM_MISSING=1
-    else
-        echo -e "${GREEN}✓ terraform CLI found${NC}"
-    fi
-
-    # Check for tflint (not available via pip, must be installed separately)
-    if ! command -v tflint >/dev/null 2>&1; then
-        echo -e "${RED}✗ tflint is not installed${NC}"
-        MISSING_TERRAFORM_TOOLS+=("tflint")
-        TERRAFORM_MISSING=1
-    else
-        echo -e "${GREEN}✓ tflint found${NC}"
-    fi
-
-    # Note: Only checking external dependencies (terraform CLI and tflint)
-    # Other tools are automatically installed by pre-commit
-
-    if [ $TERRAFORM_MISSING -eq 1 ]; then
-        echo ""
-        echo -e "${RED}✗ Missing Terraform dependencies${NC}"
-        echo ""
-        echo "The following tools are required for Terraform support but are not installed:"
-        for tool in "${MISSING_TERRAFORM_TOOLS[@]}"; do
-            case $tool in
-                "terraform CLI")
-                    echo -e "  • ${YELLOW}terraform CLI${NC}"
-                    echo "    macOS: brew install terraform"
-                    echo "    Linux: Download from https://terraform.io/downloads"
-                    echo "    Windows: Download from https://terraform.io/downloads"
-                    ;;
-                "tflint")
-                    echo -e "  • ${YELLOW}tflint${NC}"
-                    echo "    macOS: brew install tflint"
-                    echo "    Linux/Windows: Download from https://github.com/terraform-linters/tflint/releases"
-                    ;;
-
-            esac
-            echo ""
-        done
-        echo -e "${YELLOW}Please install the missing dependencies and re-run this script.${NC}"
-        echo ""
-        exit 1
-    else
-        echo -e "${GREEN}✓ All Terraform dependencies found${NC}"
-    fi
-else
-    echo -e "${BLUE}ℹ Skipping Terraform dependency checks${NC}"
 fi
 
 echo ""
@@ -340,6 +456,17 @@ echo "================================================"
 echo -e "${GREEN}✓ Setup Complete!${NC}"
 echo "================================================"
 echo ""
+
+# Show detected project types
+if [ "$DETECTED_TERRAFORM" = true ] || [ "$DETECTED_NODE" = true ] || [ "$DETECTED_GO" = true ] || [ "$DETECTED_JAVA" = true ]; then
+    echo -e "${BLUE}Detected project types:${NC}"
+    [ "$DETECTED_TERRAFORM" = true ] && echo "  • Terraform"
+    [ "$DETECTED_NODE" = true ] && echo "  • Node.js/JavaScript/TypeScript"
+    [ "$DETECTED_GO" = true ] && echo "  • Go"
+    [ "$DETECTED_JAVA" = true ] && echo "  • Java"
+    echo ""
+fi
+
 echo "Files added/updated in your repository:"
 echo "  • .devsecops/ (configuration directory)"
 echo "    - eslintrc.json"
@@ -351,6 +478,15 @@ echo "  • .gitlab-ci.yml"
 echo "  • licensecheck.toml"
 echo "  • .gitignore (updated with DevSecOps entries)"
 echo ""
+
+# Add Node.js specific warning if detected
+if [ "$DETECTED_NODE" = true ] && [ -f "package.json" ]; then
+    echo -e "${YELLOW}⚠ IMPORTANT for Node.js projects:${NC}"
+    echo -e "  Before committing, ensure you run: ${YELLOW}npm install${NC}"
+    echo "  ESLint pre-commit hooks require node_modules to be present"
+    echo ""
+fi
+
 echo -e "${BLUE}Next steps:${NC}"
 echo -e "  1. Review changes: ${YELLOW}git status${NC}"
 
