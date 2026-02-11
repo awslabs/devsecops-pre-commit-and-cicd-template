@@ -35,10 +35,8 @@ repos:
     rev: v0.15.0
     hooks:
       - id: ruff
-        args: [--fix]
-        files: '\.py$'
+        args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
-        files: '\.py$'
 
   - repo: https://github.com/psf/black
     rev: 26.1.0
@@ -76,7 +74,7 @@ repos:
   # LANGUAGE-SPECIFIC: JAVASCRIPT/TYPESCRIPT
   # ============================================================================
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v10.0.0-rc.2
+    rev: v10.0.0
     hooks:
       - id: eslint
         args:
@@ -130,7 +128,7 @@ repos:
   # SECURITY SCANNING
   # ============================================================================
   - repo: https://github.com/awslabs/automated-security-helper
-    rev: v3.1.10
+    rev: v3.1.11
     hooks:
       - id: ash-simple-scan
 
