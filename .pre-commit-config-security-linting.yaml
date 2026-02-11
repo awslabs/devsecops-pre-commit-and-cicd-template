@@ -32,13 +32,11 @@ repos:
   # LANGUAGE-SPECIFIC: PYTHON
   # ============================================================================
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.1
+    rev: v0.15.0
     hooks:
       - id: ruff
-        args: [--fix]
-        files: '\.py$'
+        args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
-        files: '\.py$'
 
   - repo: https://github.com/psf/black
     rev: 26.1.0
@@ -76,7 +74,7 @@ repos:
   # LANGUAGE-SPECIFIC: JAVASCRIPT/TYPESCRIPT
   # ============================================================================
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v10.0.0-rc.0
+    rev: v10.0.0
     hooks:
       - id: eslint
         args:
@@ -130,7 +128,7 @@ repos:
   # SECURITY SCANNING
   # ============================================================================
   - repo: https://github.com/awslabs/automated-security-helper
-    rev: v3.1.5
+    rev: v3.1.11
     hooks:
       - id: ash-simple-scan
 
@@ -147,7 +145,7 @@ repos:
             "--checks",
             "EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,SECRETS,SOCIAL_MEDIA",
             "--config",
-            ".devsecops/ferret-scan.yaml"
+            ".devsecops/ferret-scan.yaml",
           ]
         files: '\.(go|java|json|md|py|sh|sql|txt|xml|yaml|yml)$'
         # Note: .js files temporarily removed from files pending performance fix
@@ -158,7 +156,7 @@ repos:
   # INFRASTRUCTURE SECURITY
   # ============================================================================
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v1.43.4
+    rev: v1.44.0
     hooks:
       - id: cfn-lint
         exclude: ^\.*

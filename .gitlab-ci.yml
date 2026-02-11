@@ -3,9 +3,8 @@
 # Scans for sensitive data, PII, and security vulnerabilities with GitLab Security Dashboard integration
 
 # Include ASH (Automated Security Helper) component
-# Replace with your own ASH component URL or remove if not using GitLab components
-# include:
-#   - component: <YOUR_ASH_COMPONENT_URL>
+include:
+  - component: code.aws.dev/proserve/automated-security-helper/automated-security-helper/ash@~latest
 
 variables:
   # Python version (latest stable)
@@ -16,6 +15,7 @@ variables:
   FERRET_SCAN_CONFIG: ".devsecops/ferret-scan.yaml"
 
 stages:
+  - sync
   - security
   - compliance
 
@@ -26,6 +26,32 @@ cache:
     - .cache/pip
   policy: pull-push
   when: on_success
+
+# Automated sync from public GitHub repository
+# This job only runs on scheduled pipelines
+sync-from-github:
+  stage: sync
+  image: public.ecr.aws/docker/library/alpine:latest
+  before_script:
+    - apk add --no-cache git bash rsync
+  script:
+    - echo "Starting automated sync from GitHub..."
+    - bash sync-from-github.sh
+    - |
+      # Push changes if any were made
+      if git diff --quiet HEAD~1 HEAD 2>/dev/null; then
+        echo "No changes to push"
+      else
+        echo "Pushing changes to internal repository..."
+        git remote set-url origin "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+        git push origin HEAD:${CI_DEFAULT_BRANCH} -o ci.skip
+        echo "✓ Changes pushed successfully"
+      fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - when: never
+  allow_failure: false
 
 # Override ASH job to run in security stage
 ash-sast:

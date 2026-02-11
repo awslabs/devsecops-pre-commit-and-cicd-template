@@ -1,0 +1,151 @@
+---
+# Azure DevOps Pipeline - Security and Compliance
+# Scans for sensitive data, PII, security vulnerabilities, and license compliance
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+variables:
+  PYTHON_VERSION: "3.13"
+  FERRET_SCAN_CONFIDENCE: "medium,high"
+  FERRET_SCAN_CHECKS: "EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,SECRETS,SOCIAL_MEDIA"
+  FERRET_SCAN_CONFIG: ".devsecops/ferret-scan.yaml"
+
+stages:
+  - stage: Security
+    displayName: "Security Scanning"
+    jobs:
+      # ASH Security Scanning
+      - job: AshSecurityScan
+        displayName: "ASH Security Scan"
+        pool:
+          vmImage: "ubuntu-latest"
+        continueOnError: true
+        steps:
+          - checkout: self
+
+          - task: UsePythonVersion@0
+            displayName: "Set up Python"
+            inputs:
+              versionSpec: $(PYTHON_VERSION)
+
+          - script: |
+              curl -LsSf https://astral.sh/uv/install.sh | sh
+              echo "##vso[task.prependpath]$HOME/.cargo/bin"
+            displayName: "Install UV (Python package manager)"
+
+          - script: |
+              echo "Running ASH (Automated Security Helper) security analysis..."
+              uvx git+https://github.com/awslabs/automated-security-helper.git --mode precommit
+            displayName: "Run ASH Security Scan"
+            continueOnError: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Upload ASH Results"
+            condition: always()
+            inputs:
+              targetPath: ".ash/"
+              artifact: "ash-security-results"
+
+      # Ferret Scan for Sensitive Data Detection
+      - job: FerretScan
+        displayName: "Ferret Scan (Sensitive Data)"
+        pool:
+          vmImage: "ubuntu-latest"
+        continueOnError: true
+        steps:
+          - checkout: self
+
+          - task: UsePythonVersion@0
+            displayName: "Set up Python"
+            inputs:
+              versionSpec: $(PYTHON_VERSION)
+
+          - script: |
+              pip install ferret-scan
+            displayName: "Install dependencies"
+
+          - script: |
+              echo "Running Ferret Scan security analysis..."
+
+              if [ -f "$(FERRET_SCAN_CONFIG)" ]; then
+                echo "✓ Using config file: $(FERRET_SCAN_CONFIG)"
+                CONFIG_ARG="--config $(FERRET_SCAN_CONFIG)"
+              else
+                echo "⚠ No config file found at $(FERRET_SCAN_CONFIG), using defaults"
+                CONFIG_ARG=""
+              fi
+
+              ferret-scan \
+                --recursive \
+                --format sarif \
+                --output ferret-scan-results.sarif \
+                --confidence $(FERRET_SCAN_CONFIDENCE) \
+                --checks $(FERRET_SCAN_CHECKS) \
+                --no-color \
+                --quiet \
+                $CONFIG_ARG \
+                --file * || true
+
+              if [ -f "ferret-scan-results.sarif" ]; then
+                echo "✓ Ferret Scan completed successfully"
+                if command -v jq &> /dev/null; then
+                  VULN_COUNT=$(jq '.runs[0].results | length' ferret-scan-results.sarif 2>/dev/null || echo "0")
+                  echo "Found $VULN_COUNT potential sensitive data findings"
+                fi
+              else
+                echo "⚠ Warning: Ferret Scan report not generated"
+              fi
+            displayName: "Run Ferret Scan"
+            continueOnError: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Upload Ferret Scan Results"
+            condition: always()
+            inputs:
+              targetPath: "ferret-scan-results.sarif"
+              artifact: "ferret-scan-results"
+
+  - stage: Compliance
+    displayName: "Compliance Checks"
+    dependsOn: []
+    jobs:
+      # License Compliance Check
+      - job: LicenseCompliance
+        displayName: "License Compliance"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - checkout: self
+
+          - task: UsePythonVersion@0
+            displayName: "Set up Python"
+            inputs:
+              versionSpec: $(PYTHON_VERSION)
+
+          - script: |
+              pip install licensecheck
+            displayName: "Install licensecheck"
+
+          - script: |
+              echo "Checking license compliance..."
+              licensecheck --format=ansi --zero
+              echo "✓ All licenses are compliant"
+            displayName: "Run License Compliance Check"
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Upload License Report"
+            condition: always()
+            continueOnError: true
+            inputs:
+              targetPath: "licenses.json"
+              artifact: "license-compliance-report"

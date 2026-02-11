@@ -31,7 +31,7 @@ repos:
   # SECURITY SCANNING
   # ============================================================================
   - repo: https://github.com/awslabs/automated-security-helper
-    rev: v3.1.5
+    rev: v3.1.11
     hooks:
       - id: ash-simple-scan
 
@@ -48,7 +48,7 @@ repos:
             "--checks",
             "EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,SECRETS,SOCIAL_MEDIA",
             "--config",
-            ".devsecops/ferret-scan.yaml"
+            ".devsecops/ferret-scan.yaml",
           ]
         files: '\.(go|java|json|md|py|sh|sql|txt|xml|yaml|yml)$'
         # Note: .js files temporarily removed from files pending performance fix
@@ -59,7 +59,7 @@ repos:
   # INFRASTRUCTURE SECURITY
   # ============================================================================
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v1.43.4
+    rev: v1.44.0
     hooks:
       - id: cfn-lint
         exclude: ^\.*

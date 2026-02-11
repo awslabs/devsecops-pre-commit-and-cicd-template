@@ -1,6 +1,6 @@
 # DevSecOps: Pre-commit Hooks & CI/CD Pipeline
 
-This repository provides pre-commit hooks and GitLab CI/CD pipeline configuration to automatically run security, code quality, and formatting checks before each commit and in your CI/CD pipeline.
+This repository provides pre-commit hooks and CI/CD pipeline configurations for GitHub Actions, GitLab CI, and Azure DevOps to automatically run security, code quality, and formatting checks before each commit and in your CI/CD pipeline.
 
 ## Table of Contents
 
@@ -11,6 +11,8 @@ This repository provides pre-commit hooks and GitLab CI/CD pipeline configuratio
 - [Updating Hooks](#updating-hooks)
 - [Running Tools Individually](#running-tools-individually)
 - [GitLab CI/CD Integration](#gitlab-cicd-integration)
+- [GitHub Actions Integration](#github-actions-integration)
+- [Azure DevOps Integration](#azure-devops-integration)
 - [Troubleshooting](#troubleshooting)
 - [Additional Resources](#additional-resources)
 
@@ -37,12 +39,14 @@ rm -rf "$TEMP_SETUP"
 **What the setup script does:**
 
 - ✅ Checks prerequisites (git, rsync, pre-commit)
+- ✅ **Proactive Project Detection**: Automatically detects Terraform, Node.js, Go, and Java projects
+- ✅ **Dependency Validation**: Validates all required tools are installed before proceeding
 - ✅ Clones the DevSecOps repository
-- ✅ **Terraform Usage Detection**: Asks if you're using Terraform and validates dependencies
 - ✅ **Interactive Configuration Selection**: Choose between security-only or security + linting
 - ✅ **Smart Configuration**: Automatically includes/excludes Terraform hooks based on your usage
 - ✅ Copies configuration files (licensecheck.toml, .devsecops/)
-- ✅ Prompts before replacing existing .pre-commit-config.yaml or .gitlab-ci.yml (creates backups)
+- ✅ Copies CI/CD pipeline files (.gitlab-ci.yml, .github/, azure-pipelines.yml)
+- ✅ Prompts before replacing existing files (creates backups)
 - ✅ Automatically updates .gitignore with DevSecOps entries
 - ✅ Updates pre-commit hooks to latest versions
 - ✅ Shows clear next steps
@@ -129,7 +133,12 @@ If you're using Terraform, the setup script will check for and require:
 - `terraform` CLI (install: `brew install terraform` on macOS, or download from https://terraform.io/downloads)
 - `tflint` (install: `brew install tflint` on macOS, or download from https://github.com/terraform-linters/tflint/releases)
 
-**Note:** The setup script will automatically detect if you're using Terraform and validate these dependencies. For security scanning and validation, use CI/CD pipelines where proper environment setup is available.
+**Note:** The setup script automatically detects your project type and validates dependencies:
+
+- **Terraform**: Requires `terraform` CLI and `tflint`
+- **Node.js/JavaScript/TypeScript**: Requires `node`, `npm`, and `node_modules` (run `npm install`)
+- **Go**: Requires `go` compiler
+- **Java**: Requires `java` JDK
 
 ### What Gets Added to Your Repository
 
@@ -144,8 +153,13 @@ The setup script copies these files:
 **Root Configuration Files:**
 
 - `.pre-commit-config.yaml` - Pre-commit hooks configuration (prompts if exists, creates backup)
-- `.gitlab-ci.yml` - GitLab CI/CD pipeline configuration (prompts if exists, creates backup)
 - `licensecheck.toml` - License compliance configuration
+
+**CI/CD Pipeline Files:**
+
+- `.gitlab-ci.yml` - GitLab CI/CD pipeline configuration (prompts if exists, creates backup)
+- `.github/workflows/security-compliance.yml` - GitHub Actions workflow
+- `azure-pipelines.yml` - Azure DevOps pipeline configuration (prompts if exists, creates backup)
 
 And automatically updates `.gitignore` with recommended entries:
 
@@ -620,6 +634,38 @@ variables:
 
 ASH configuration can be customized by overriding the `ash-sast` job or by providing ASH-specific configuration files.
 
+## GitHub Actions Integration
+
+This repository includes a GitHub Actions workflow (`.github/workflows/security-compliance.yml`) that runs the same security scanning and compliance checks.
+
+See [`.github/workflows/README.md`](.github/workflows/README.md) for detailed documentation on the GitHub Actions workflow, including triggers, jobs, permissions, and troubleshooting.
+
+## Azure DevOps Integration
+
+This repository includes an Azure DevOps pipeline (`azure-pipelines.yml`) that mirrors the same security scanning and compliance checks.
+
+### Pipeline Stages
+
+1. **Security**: Runs ASH and Ferret Scan in parallel
+2. **Compliance**: Runs License Compliance check (runs in parallel with Security)
+
+### Configuration
+
+Edit the `variables` section in `azure-pipelines.yml`:
+
+```yaml
+variables:
+  PYTHON_VERSION: "3.13"
+  FERRET_SCAN_CONFIDENCE: "medium,high"
+  FERRET_SCAN_CHECKS: "EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,SECRETS,SOCIAL_MEDIA"
+  FERRET_SCAN_CONFIG: ".devsecops/ferret-scan.yaml"
+```
+
+### Viewing Results
+
+- Go to **Pipelines** → select a run → view job logs
+- Download artifacts from the pipeline run summary
+
 ## Troubleshooting
 
 ### Hooks are slow
@@ -653,8 +699,11 @@ The standalone `setup.sh` script provides:
 ### Automatic Setup
 
 - ✅ **Prerequisite Checking**: Verifies git, rsync, and pre-commit are installed
+- ✅ **Proactive Project Detection**: Automatically detects Terraform, Node.js, Go, and Java projects
+- ✅ **Dependency Validation**: Validates all required tools upfront with clear installation instructions
 - ✅ **File Management**: Copies all required configuration files
-- ✅ **Safe Overwrite Protection**: Prompts before replacing existing .pre-commit-config.yaml or .gitlab-ci.yml (creates .bak files)
+- ✅ **Safe Overwrite Protection**: Prompts before replacing existing files (creates .bak backups)
+- ✅ **CI/CD Pipeline Support**: Copies GitLab CI, GitHub Actions, and Azure DevOps pipeline files
 - ✅ **Gitignore Updates**: Automatically adds DevSecOps entries (idempotent - safe to run multiple times)
 - ✅ **Hook Updates**: Updates pre-commit hooks to latest versions
 - ✅ **Error Handling**: Clear error messages with solutions
