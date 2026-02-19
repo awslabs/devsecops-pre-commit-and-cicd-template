@@ -36,7 +36,7 @@ repos:
       - id: ash-simple-scan
 
   - repo: https://github.com/awslabs/ferret-scan
-    rev: v1.4.0
+    rev: v1.5.1
     hooks:
       - id: ferret-scan
         name: Ferret Scan Security Check
