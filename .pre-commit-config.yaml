@@ -32,7 +32,7 @@ repos:
   # LANGUAGE-SPECIFIC: PYTHON
   # ============================================================================
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.0
+    rev: v0.15.1
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -128,7 +128,7 @@ repos:
   # SECURITY SCANNING
   # ============================================================================
   - repo: https://github.com/awslabs/automated-security-helper
-    rev: v3.1.11
+    rev: v3.2.1
     hooks:
       - id: ash-simple-scan
 
