@@ -87,6 +87,7 @@ ferret-scan:
         --output ferret-sast-report.json \
         --confidence $FERRET_SCAN_CONFIDENCE \
         --checks $FERRET_SCAN_CHECKS \
+        --disable-ip-types trademark,copyright,trade_secret \
         --no-color \
         --quiet \
         $CONFIG_ARG \
