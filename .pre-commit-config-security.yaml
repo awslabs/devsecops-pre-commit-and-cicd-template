@@ -31,12 +31,12 @@ repos:
   # SECURITY SCANNING
   # ============================================================================
   - repo: https://github.com/awslabs/automated-security-helper
-    rev: v3.2.5
+    rev: v3.4.0
     hooks:
       - id: ash-simple-scan
 
   - repo: https://github.com/awslabs/ferret-scan
-    rev: v1.5.3
+    rev: v1.7.1
     hooks:
       - id: ferret-scan
         name: Ferret Scan Security Check
@@ -61,7 +61,7 @@ repos:
   # INFRASTRUCTURE SECURITY
   # ============================================================================
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v1.48.1
+    rev: v1.50.1
     hooks:
       - id: cfn-lint
         exclude: ^\.*
