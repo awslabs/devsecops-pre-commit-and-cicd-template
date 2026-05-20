@@ -31,7 +31,7 @@ repos:
   # SECURITY SCANNING
   # ============================================================================
   - repo: https://github.com/awslabs/automated-security-helper
-    rev: v3.4.0
+    rev: v3.5.3
     hooks:
       - id: ash-simple-scan
 
@@ -61,7 +61,7 @@ repos:
   # INFRASTRUCTURE SECURITY
   # ============================================================================
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v1.50.1
+    rev: v1.51.0
     hooks:
       - id: cfn-lint
         exclude: ^\.*
