@@ -10,6 +10,7 @@ repos:
       - id: check-json
         exclude: '(package-lock\.json$|yarn\.lock$|pnpm-lock\.yaml$|cdk\.context\.json$|\.vscode/|\.idea/|\.terraform/)'
       - id: check-yaml
+        args: ["--unsafe", "--allow-multiple-documents"]
       - id: debug-statements
       - id: detect-private-key
         exclude: '(\.terraform/|node_modules/|\.venv/|venv/|\.virtualenv/|vendor/|Pods/)'
@@ -20,12 +21,12 @@ repos:
   # ============================================================================
   # PYTHON SECURITY
   # ============================================================================
-  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
-    rev: v1.4.2
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.10.0
     hooks:
-      - id: python-safety-dependencies-check
-        files: requirements.*\.txt$
-        exclude: pyproject\.toml
+      - id: pip-audit
+        args: ["-r", "requirements.txt"]
+        files: requirements\.txt$
 
   # ============================================================================
   # SECURITY SCANNING
@@ -36,7 +37,7 @@ repos:
       - id: ash-simple-scan
 
   - repo: https://github.com/awslabs/ferret-scan
-    rev: v1.7.1
+    rev: v1.8.3
     hooks:
       - id: ferret-scan
         name: Ferret Scan Security Check
@@ -61,7 +62,7 @@ repos:
   # INFRASTRUCTURE SECURITY
   # ============================================================================
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v1.51.0
+    rev: v1.51.2
     hooks:
       - id: cfn-lint
         exclude: ^\.*
