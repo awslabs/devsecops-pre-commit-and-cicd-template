@@ -124,7 +124,7 @@ license-compliance:
     policy: pull-push
     when: on_success
   before_script:
-    - pip install --cache-dir .cache/pip licensecheck
+    - pip install --cache-dir .cache/pip "licensecheck>=2025.1.0,<2026"
   script:
     - echo "Checking license compliance..."
     # Run licensecheck
