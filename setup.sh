@@ -8,7 +8,7 @@
 
 set -e
 
-VERSION="1.1.0"
+VERSION="1.2.0"
 REPO_URL="https://github.com/awslabs/devsecops-pre-commit-and-cicd-template.git"
 TEMP_DIR="$(mktemp -d)/DevSecOps"
 
@@ -72,6 +72,8 @@ DETECTED_TERRAFORM=false
 DETECTED_NODE=false
 DETECTED_GO=false
 DETECTED_JAVA=false
+DETECTED_KOTLIN=false
+DETECTED_SWIFT=false
 
 # Detect Terraform
 if [ -n "$(find . -maxdepth 3 -name '*.tf' -print -quit 2>/dev/null)" ]; then
@@ -100,7 +102,19 @@ if [ -f "pom.xml" ] || [ -f "build.gradle" ] || [ -n "$(find . -maxdepth 3 -name
     echo -e "${BLUE}✓ Detected Java project${NC}"
 fi
 
-if [ "$DETECTED_TERRAFORM" = false ] && [ "$DETECTED_NODE" = false ] && [ "$DETECTED_GO" = false ] && [ "$DETECTED_JAVA" = false ]; then
+# Detect Kotlin
+if [ -f "build.gradle.kts" ] || [ -n "$(find . -maxdepth 3 \( -name '*.kt' -o -name '*.kts' \) -print -quit 2>/dev/null)" ]; then
+    DETECTED_KOTLIN=true
+    echo -e "${BLUE}✓ Detected Kotlin project${NC}"
+fi
+
+# Detect Swift
+if [ -f "Package.swift" ] || [ -n "$(find . -maxdepth 3 -name '*.swift' -print -quit 2>/dev/null)" ]; then
+    DETECTED_SWIFT=true
+    echo -e "${BLUE}✓ Detected Swift project${NC}"
+fi
+
+if [ "$DETECTED_TERRAFORM" = false ] && [ "$DETECTED_NODE" = false ] && [ "$DETECTED_GO" = false ] && [ "$DETECTED_JAVA" = false ] && [ "$DETECTED_KOTLIN" = false ] && [ "$DETECTED_SWIFT" = false ]; then
     echo -e "${YELLOW}ℹ No specific project type detected (Python-only or other)${NC}"
 fi
 
@@ -368,6 +382,7 @@ if [ "$CONFIG_SKIPPED" = false ]; then
                 echo "   • JavaScript/TypeScript: ESLint fixes + Prettier formatting"
                 echo "   • Go: gofmt + goimports formatting"
                 echo "   • Java: Pretty formatting"
+                echo "   • Kotlin: KTLint formatting"
                 echo ""
                 read -p "Continue with auto-formatting configuration? (y/n) " -n 1 -r
                 echo ""
@@ -536,12 +551,14 @@ echo "================================================"
 echo ""
 
 # Show detected project types
-if [ "$DETECTED_TERRAFORM" = true ] || [ "$DETECTED_NODE" = true ] || [ "$DETECTED_GO" = true ] || [ "$DETECTED_JAVA" = true ]; then
+if [ "$DETECTED_TERRAFORM" = true ] || [ "$DETECTED_NODE" = true ] || [ "$DETECTED_GO" = true ] || [ "$DETECTED_JAVA" = true ] || [ "$DETECTED_KOTLIN" = true ] || [ "$DETECTED_SWIFT" = true ]; then
     echo -e "${BLUE}Detected project types:${NC}"
     [ "$DETECTED_TERRAFORM" = true ] && echo "  • Terraform"
     [ "$DETECTED_NODE" = true ] && echo "  • Node.js/JavaScript/TypeScript"
     [ "$DETECTED_GO" = true ] && echo "  • Go"
     [ "$DETECTED_JAVA" = true ] && echo "  • Java"
+    [ "$DETECTED_KOTLIN" = true ] && echo "  • Kotlin"
+    [ "$DETECTED_SWIFT" = true ] && echo "  • Swift"
     echo ""
 fi
 

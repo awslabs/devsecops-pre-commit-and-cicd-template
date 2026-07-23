@@ -134,7 +134,7 @@ stages:
               versionSpec: $(PYTHON_VERSION)
 
           - script: |
-              pip install licensecheck
+              pip install "licensecheck>=2025.1.0,<2026"
             displayName: "Install licensecheck"
 
           - script: |

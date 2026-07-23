@@ -440,13 +440,13 @@ detect-secrets scan --json
 curl -sSfL https://astral.sh/uv/install.sh | sh
 
 # Run ASH in local mode
-uvx git+https://github.com/awslabs/automated-security-helper.git@v3.1.2 --mode local
+uvx git+https://github.com/awslabs/automated-security-helper.git@v3.5.7 --mode local
 
 # Run ASH in container mode (all tools)
-uvx git+https://github.com/awslabs/automated-security-helper.git@v3.1.2 --mode container
+uvx git+https://github.com/awslabs/automated-security-helper.git@v3.5.7 --mode container
 
 # Run ASH in precommit mode (fast)
-uvx git+https://github.com/awslabs/automated-security-helper.git@v3.1.2 --mode precommit
+uvx git+https://github.com/awslabs/automated-security-helper.git@v3.5.7 --mode precommit
 ```
 
 ### Python Safety

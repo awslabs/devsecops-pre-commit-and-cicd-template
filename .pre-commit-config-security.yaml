@@ -22,7 +22,7 @@ repos:
   # PYTHON SECURITY
   # ============================================================================
   - repo: https://github.com/pypa/pip-audit
-    rev: v2.10.0
+    rev: v2.10.1
     hooks:
       - id: pip-audit
         args: ["-r", "requirements.txt"]
@@ -32,12 +32,12 @@ repos:
   # SECURITY SCANNING
   # ============================================================================
   - repo: https://github.com/awslabs/automated-security-helper
-    rev: v3.5.3
+    rev: v3.5.7
     hooks:
       - id: ash-simple-scan
 
   - repo: https://github.com/awslabs/ferret-scan
-    rev: v1.8.3
+    rev: v2.1.1
     hooks:
       - id: ferret-scan
         name: Ferret Scan Security Check
@@ -53,8 +53,7 @@ repos:
             "--config",
             ".devsecops/ferret-scan.yaml",
           ]
-        files: '\.(go|java|json|md|py|sh|sql|txt|xml|yaml|yml)$'
-        # Note: .js files temporarily removed from files pending performance fix
+        files: '\.(go|java|json|kt|kts|md|py|sh|sql|swift|txt|xml|yaml|yml)$'
         exclude: '(^\.git/|\.ash/|\.cache/|\.devsecops/|\.dsr/|\.idea/|\.kiro/|\.venv/|\.virtualenv/|__pycache__/|\.pytest_cache/|\.mypy_cache/|\.ruff_cache/|\.tox/|\.terraform/|\.next/|\.nuxt/|\.svelte-kit/|\.turbo/|\.docusaurus/|_build/|site/|bin/|cdk\.out/|dist/|node_modules/|\.pnpm-store/|\.yarn/|bower_components/|\.vscode/|out/|\.output/|\.nyc_output/|test-results/|reports/|tmp/|temp/|logs/|setup\.sh|vendor/|Pods/|venv/|test_|_test\.|^README\.md$|\.DS_Store$|Thumbs\.db$|.*\.pyc$|.*\.pyo$|.*\.swp$|.*\.swo$|.*\.log$|package-lock\.json$|yarn\.lock$|pnpm-lock\.yaml$|poetry\.lock$|Pipfile\.lock$|Gemfile\.lock$|\.terraform\.lock\.hcl$|terraform\.tfstate$|cdk\.context\.json$)'
         pass_filenames: true
 
@@ -62,13 +61,13 @@ repos:
   # INFRASTRUCTURE SECURITY
   # ============================================================================
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v1.51.2
+    rev: v1.53.1
     hooks:
       - id: cfn-lint
         exclude: ^\.*
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.105.0
+    rev: v1.108.0
     hooks:
       - id: terraform_tflint
         files: '\.tf$'
