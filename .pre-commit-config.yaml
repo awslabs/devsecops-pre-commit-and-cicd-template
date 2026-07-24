@@ -148,7 +148,7 @@ repos:
             "--confidence",
             "medium,high",
             "--checks",
-            "EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,SECRETS,SOCIAL_MEDIA",
+            "CLOUD_RESOURCES,EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,OTP,SECRETS,SOCIAL_MEDIA",
             "--disable-ip-types",
             "trademark,copyright,trade_secret",
             "--config",
