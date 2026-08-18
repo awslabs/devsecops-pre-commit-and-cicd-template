@@ -32,12 +32,12 @@ repos:
   # SECURITY SCANNING
   # ============================================================================
   - repo: https://github.com/awslabs/automated-security-helper
-    rev: v3.5.7
+    rev: v3.5.9
     hooks:
       - id: ash-simple-scan
 
   - repo: https://github.com/awslabs/ferret-scan
-    rev: v2.1.1
+    rev: v2.3.2
     hooks:
       - id: ferret-scan
         name: Ferret Scan Security Check
@@ -61,13 +61,13 @@ repos:
   # INFRASTRUCTURE SECURITY
   # ============================================================================
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v1.53.1
+    rev: v1.55.1
     hooks:
       - id: cfn-lint
         exclude: ^\.*
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.108.0
+    rev: v1.108.1
     hooks:
       - id: terraform_tflint
         files: '\.tf$'
@@ -78,6 +78,15 @@ repos:
   # ============================================================================
   # LICENSE COMPLIANCE
   # ============================================================================
+  # DO NOT bump to 2026.x — `pre-commit autoupdate` will try to. Two regressions
+  # break template consumers:
+  #   1. No pyproject.toml -> hard crash "RuntimeError: All resolvers failed".
+  #      The CLI's hardcoded requirements_paths default ("pyproject.toml")
+  #      overrides the value set in licensecheck.toml, so a project using
+  #      requirements.txt still crashes. Passing --requirements-paths works
+  #      around it, but every path listed must exist or it crashes again.
+  #   2. A project with zero dependencies exits 3 instead of 0.
+  # 2025.1.0 prints "No packages" and exits 0 in both cases.
   - repo: https://github.com/FHPythonUtils/LicenseCheck
     rev: "2025.1.0"
     hooks:
