@@ -28,13 +28,17 @@ repos:
     hooks:
       - id: codespell
         verbose: true
-        args: [--ignore-words-list=ehr, ser]
+        # Must be ONE argument. `[--ignore-words-list=ehr, ser]` is a YAML flow
+        # sequence, so it splits into two args and "ser" becomes a stray
+        # positional filename instead of an ignored word. "ser" occurs inside
+        # the reddit regex `u(?:ser)?` in .devsecops/ferret-scan.yaml.
+        args: ["--ignore-words-list=ehr,ser"]
 
   # ============================================================================
   # LANGUAGE-SPECIFIC: PYTHON
   # ============================================================================
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.22
+    rev: v0.16.3
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -76,7 +80,7 @@ repos:
   # LANGUAGE-SPECIFIC: JAVASCRIPT/TYPESCRIPT
   # ============================================================================
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v10.7.0
+    rev: v10.8.1
     hooks:
       - id: eslint
         args:
@@ -119,7 +123,7 @@ repos:
   # INFRASTRUCTURE AS CODE: TERRAFORM
   # ============================================================================
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.108.0
+    rev: v1.108.1
     hooks:
       - id: terraform_fmt
         files: '\.tf$'
@@ -133,12 +137,12 @@ repos:
   # SECURITY SCANNING
   # ============================================================================
   - repo: https://github.com/awslabs/automated-security-helper
-    rev: v3.5.7
+    rev: v3.5.9
     hooks:
       - id: ash-simple-scan
 
   - repo: https://github.com/awslabs/ferret-scan
-    rev: v2.1.1
+    rev: v2.3.2
     hooks:
       - id: ferret-scan
         name: Ferret Scan Security Check
@@ -162,7 +166,7 @@ repos:
   # INFRASTRUCTURE SECURITY
   # ============================================================================
   - repo: https://github.com/aws-cloudformation/cfn-lint
-    rev: v1.53.1
+    rev: v1.55.1
     hooks:
       - id: cfn-lint
         exclude: ^\.*
@@ -170,6 +174,15 @@ repos:
   # ============================================================================
   # LICENSE COMPLIANCE
   # ============================================================================
+  # DO NOT bump to 2026.x — `pre-commit autoupdate` will try to. Two regressions
+  # break template consumers:
+  #   1. No pyproject.toml -> hard crash "RuntimeError: All resolvers failed".
+  #      The CLI's hardcoded requirements_paths default ("pyproject.toml")
+  #      overrides the value set in licensecheck.toml, so a project using
+  #      requirements.txt still crashes. Passing --requirements-paths works
+  #      around it, but every path listed must exist or it crashes again.
+  #   2. A project with zero dependencies exits 3 instead of 0.
+  # 2025.1.0 prints "No packages" and exits 0 in both cases.
   - repo: https://github.com/FHPythonUtils/LicenseCheck
     rev: "2025.1.0"
     hooks:

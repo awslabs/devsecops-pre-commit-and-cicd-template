@@ -5,8 +5,7 @@
 defaults:
   format: text # Output format: text, json, csv, yaml, junit
   confidence_levels: all # Confidence levels to display: high, medium, low, or combinations
-  checks:
-    all # Specific checks to run: CREDIT_CARD, PASSPORT, METADATA, INTELLECTUAL_PROPERTY, SSN, SECRETS, EMAIL, PHONE, IP_ADDRESS, or combinations
+  checks: all # Specific checks to run: CREDIT_CARD, PASSPORT, METADATA, INTELLECTUAL_PROPERTY, SSN, SECRETS, EMAIL, PHONE, IP_ADDRESS, or combinations
   verbose: false # Display detailed information for each finding
   debug: false # Enable debug logging to show preprocessing and validation flow
   no_color: false # Disable colored output
@@ -383,6 +382,21 @@ validators:
         - "(?i)https?://(?:www\\.)?clubhouse\\.com/@[a-zA-Z0-9_]+" # Profile URLs
         - "(?i)clubhouse\\.com/@[a-zA-Z0-9_]+" # Without protocol
 
+      # Threads - Meta's text-based conversation platform
+      threads:
+        - "(?i)https?://(?:www\\.)?threads\\.net/@[a-zA-Z0-9_.]+" # Profile URLs
+        - "(?i)threads\\.net/@[a-zA-Z0-9_.]+" # Without protocol
+
+      # Bluesky - Decentralized microblogging platform (AT Protocol)
+      bluesky:
+        - "(?i)https?://(?:www\\.)?bsky\\.app/profile/[a-zA-Z0-9_.-]+" # Profile URLs
+        - "(?i)bsky\\.app/profile/[a-zA-Z0-9_.-]+" # Without protocol
+
+      # Mastodon - Federated microblogging platform (ActivityPub)
+      mastodon:
+        - "(?i)https?://[a-zA-Z0-9_.-]+/@[a-zA-Z0-9_]+@[a-zA-Z0-9_.-]+" # Any instance, full handle
+        - "(?i)https?://(?:mastodon\\.social|mastodon\\.online|mstdn\\.social|fosstodon\\.org)/@[a-zA-Z0-9_]+" # Well-known instances
+
     # Keywords that increase confidence when found near social media patterns
     positive_keywords:
       - "profile"
@@ -567,6 +581,28 @@ validators:
         - "publication"
         - "clap"
 
+      threads:
+        - "post"
+        - "follow"
+        - "thread"
+        - "reply"
+        - "repost"
+
+      bluesky:
+        - "post"
+        - "follow"
+        - "skeet"
+        - "repost"
+        - "feed"
+
+      mastodon:
+        - "toot"
+        - "boost"
+        - "follow"
+        - "instance"
+        - "fediverse"
+        - "federated"
+
     # Patterns to whitelist (reduce false positives)
     whitelist_patterns:
       - "(?i)example\\.com"
@@ -581,8 +617,6 @@ suppressions:
   generate_on_scan: false # Generate suppression rules for all findings during scan
   show_suppressed: false # Include suppressed findings in output
 
-
-
 # Profiles for different scanning scenarios
 profiles:
   # Quick scan profile - only high confidence matches, minimal output
@@ -596,6 +630,12 @@ profiles:
     quiet: true
     show_match: false
     enable_preprocessors: false # Skip document processing for speed
+    respect_gitignore: true # Skip files excluded by .gitignore
+    exclude_patterns: # Directories never worth scanning in a quick pass
+      - ".git"
+      - "node_modules"
+      - "dist/"
+      - "build/"
     description: "Quick scan focusing on critical data types with minimal processing"
 
   # Thorough scan profile - all confidence levels, verbose output, recursive scanning
@@ -607,6 +647,7 @@ profiles:
     no_color: false
     recursive: true
     enable_preprocessors: true
+    respect_gitignore: false # Scan everything, including gitignored files
     description: "Thorough scan with all confidence levels, recursive scanning, and text extraction"
 
   # Debug profile - enables debug logging to show preprocessing and validation flow
@@ -701,7 +742,6 @@ profiles:
           - "http[s]?:\\/\\/monitoring\\.example\\.com" # System monitoring
           - "http[s]?:\\/\\/logs\\.example\\.com" # Log aggregation
 
-
   # Company-specific profile with custom internal URLs and patterns
   company-specific:
     format: text
@@ -746,7 +786,6 @@ profiles:
           # Custom copyright pattern including company name
           copyright: "(©|\\(c\\)|\\(C\\)|Copyright|\\bCopyright\\b)\\s*\\d{4}[-,]?(\\d{4})?\\s+(Company\\s+Name|Company\\s+Inc|[A-Za-z0-9\\s\\.,]+)"
 
-
   # Redaction profile - scan and redact sensitive data with format preservation
   redaction:
     format: text
@@ -778,7 +817,6 @@ profiles:
       output_dir: "./secure-redacted"
       strategy: "synthetic"
       index_file: "./secure-redaction-index.json"
-
 
   # Security audit profile - focused on security-sensitive data types
   security-audit:
