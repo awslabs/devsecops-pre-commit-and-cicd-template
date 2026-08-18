@@ -16,15 +16,19 @@ defaults:
   quiet: false # Suppress progress output (useful for scripts and CI/CD)
   show_suppressed: false # Include suppressed findings in output with suppression details
   generate_suppressions: false # Generate suppression rules for all findings
+  respect_gitignore: false # Honor .gitignore / .git/info/exclude when walking directories
+  fail_on_incomplete: false # Exit code 3 if a file's validator coverage was cut short (timeout/budget)
+  # exclude_patterns:            # Glob patterns to skip; the CI job scans `--file *`
+  #   - "node_modules/**"        # recursively, so excludes here reduce both noise and runtime
+  #   - "dist/**"
 
 # Preprocessor configurations
 preprocessors:
   # Text extraction from documents
   text_extraction:
-    enabled: true # Enable text extraction preprocessor
-    types: # Types of text extraction to perform
-      - pdf # Extract text from PDF documents
-      - office # Extract text from Office documents (DOCX, XLSX, PPTX, ODT, ODS, ODP)
+    # PDF and Office documents are both handled whenever this is on. There is no
+    # per-type selector: a `types:` list here is an unknown key and is ignored.
+    enabled: true
 
   # Metadata extraction (automatically enabled when preprocessors are enabled)
   # Supports multiple file types:
@@ -41,20 +45,11 @@ redaction:
   output_dir: "./redacted" # Directory where redacted files will be stored
   strategy: "format_preserving" # Default redaction strategy: simple, format_preserving, or synthetic
   audit_log_file: "" # Path to save redaction audit log file (JSON format for compliance)
-  memory_scrub: true # Enable secure memory scrubbing after processing sensitive data
-  audit_trail: true # Enable audit trail generation for redaction operations
-
-  # Strategy-specific configurations
-  strategies:
-    simple:
-      replacement: "[REDACTED]" # Text to replace sensitive data with
-
-    format_preserving:
-      preserve_length: true # Maintain original text length
-      preserve_format: true # Maintain original text format (e.g., XXX-XX-XXXX for SSN)
-
-    synthetic:
-      secure: true # Use cryptographically secure synthetic data generation
+  # The strategies are not individually tunable: `simple` always substitutes a fixed
+  # marker, `format_preserving` always preserves length and shape, and `synthetic`
+  # always generates with a cryptographic source. A `strategies:` block, `memory_scrub`
+  # or `audit_trail` here are unknown keys — they are ignored, and previously implied
+  # compliance behavior the scanner does not implement.
 
 # Validator-specific configurations
 validators:
@@ -289,7 +284,14 @@ validators:
       # Twitter/X - Microblogging platform
       twitter:
         - "(?i)https?://(?:www\\.)?(twitter|x)\\.com/[a-zA-Z0-9_]+" # Profile URLs
-        - "(?i)(?<!\\w)@[a-zA-Z0-9_]{1,15}(?!@|\\.[a-zA-Z])" # @mentions and handles
+        # Go uses RE2, which has NO lookaround. The previous form here —
+        # "(?i)(?<!\w)@[a-zA-Z0-9_]{1,15}(?!@|\.[a-zA-Z])" — failed to compile, so it
+        # was silently DROPPED: twitter loaded 2 of 3 patterns and no bare @handle was
+        # ever detected, even though SOCIAL_MEDIA is enabled in CI and pre-commit.
+        # \B before @ reproduces the lookbehind (@ is a non-word char, so \B holds only
+        # when the preceding char is also non-word or start-of-line), which rejects
+        # bob@example.com. The trailing exclusions are enforced in code instead.
+        - "(?i)\\B@[a-zA-Z0-9_]{1,15}\\b" # @mentions and handles
         - "(?i)(twitter|x)\\.com/[a-zA-Z0-9_]+"
 
       # GitHub - Code repository platform
@@ -621,8 +623,24 @@ profiles:
     show_suppressed: true # Show suppressed findings for debugging
     description: "Debug mode with detailed logging and comprehensive output for troubleshooting"
 
-  # CI/CD pipeline profile - JUnit XML output for integration with CI/CD systems
+  # CI/CD pipeline profile - mirrors the ferret-scan job in .gitlab-ci.yml so that
+  # `--profile ci` locally reproduces what the pipeline runs. Keep the two in step:
+  # the job passes --format gitlab-sast, --confidence medium,high and FERRET_SCAN_CHECKS.
   ci:
+    format: gitlab-sast
+    confidence_levels: high,medium
+    checks: CLOUD_RESOURCES,EMAIL,INTELLECTUAL_PROPERTY,IP_ADDRESS,OTP,SECRETS,SOCIAL_MEDIA
+    verbose: true
+    no_color: true
+    recursive: true
+    enable_preprocessors: true
+    quiet: true
+    show_suppressed: false
+    generate_suppressions: false
+    description: "CI/CD pipeline profile matching the GitLab ferret-scan job (gitlab-sast output)"
+
+  # JUnit variant for CI systems that consume test-result XML rather than SAST reports
+  ci-junit:
     format: junit
     confidence_levels: high,medium
     checks: all
